@@ -2,6 +2,7 @@ const crypto = require('crypto')
 const typeforce = require('typeforce')
 const Promise = require('bluebird')
 const co = Promise.coroutine
+const debug = require('debug')('tradle:bot-keep-fresh')
 const stringify = require('json-stable-stringify')
 const STORAGE_KEY = require('./package').name
 
@@ -38,8 +39,18 @@ module.exports = function keepFresh (opts) {
   }, opts)
 
   let bot
-  const { id, item, update, proactive } = opts
-  const hash = hashItem(item)
+  let hash
+  let { id, item, update, proactive } = opts
+
+  /**
+   * Allow hot updates
+   */
+  const updateItem = co(function* updateItem (latest) {
+    item = latest
+    hash = hashItem(latest)
+    if (proactive) return ensureFresh()
+  })
+
   const updateIfFresh = co(function* updateIfFresh ({ user }) {
     if (!user[STORAGE_KEY]) {
       user[STORAGE_KEY] = {}
@@ -48,7 +59,8 @@ module.exports = function keepFresh (opts) {
     const bin = user[STORAGE_KEY]
     const storedHash = bin[id]
     if (storedHash !== hash) {
-      yield update({ bot, user, item })
+      debug(`updating user "${user.id}" with fresh "${id}"`)
+      yield update({ bot, user })
       bin[id] = hash
       bot.users.save(user)
     }
@@ -59,7 +71,7 @@ module.exports = function keepFresh (opts) {
       .map(id => bot.users.get(id))
   }
 
-  function ensureFresh (users) {
+  const ensureFresh = co(function* ensureFresh (users) {
     // normalize to array
     if (users) {
       users = [].concat(users)
@@ -67,16 +79,16 @@ module.exports = function keepFresh (opts) {
       users = getAllUsersArray()
     }
 
-    users.forEach(user => updateIfFresh({ user }))
-  }
+    return Promise.all(users.map(user => updateIfFresh({ user })))
+  })
 
   return function install (botHandle) {
     bot = botHandle
-    if (proactive) ensureFresh()
-
+    updateItem(item)
     const ret = bot.addReceiveHandler(updateIfFresh)
 
-    // export ensureFresh function
+    // export functions
+    ret.update = updateItem
     ret.ensureFresh = ensureFresh
     return ret
   }

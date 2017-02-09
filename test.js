@@ -5,7 +5,7 @@ const test = require('tape')
 const keepFresh = require('./')
 
 test('basic', co(function* (t) {
-  const id = 'item'
+  const id = 'stuff'
   const item = [{ id: 'a' }, { id: 'b' }]
   const update = co(function* () {
     timesUpdated++
@@ -71,6 +71,19 @@ test('basic', co(function* (t) {
 
   t.equal(timesUpdated, 3)
   t.equal(timesSaved, 3)
+
+  // proactive
+  stop()
+  stop = keepFresh({
+    id,
+    item,
+    update,
+    proactive: true
+  })(bot)
+
+  yield stop.update('as string?')
+  t.equal(timesUpdated, 4)
+  t.equal(timesSaved, 4)
 
   t.end()
 }))

@@ -11,13 +11,13 @@ module.exports = function keepModelsFresh (models) {
     item: models,
     // in proactive mode, the bot will update all known users on start
     // proactive: true,
-    update: function update ({ bot, user, item }) {
+    update: function update ({ bot, user }) {
       // send the latest models to the user
       return bot.send({
         userId: user.id,
         object: {
           _t: 'tradle.ModelsPack',
-          models: item
+          models
         }
       })
     })
