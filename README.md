@@ -1,7 +1,7 @@
 
 # @tradle/bot-keep-fresh
 
-make sure your users are up to date with your latest models
+make sure your users are up to date with your latest models, styles, and whatever else they need the latest and bestest of
 
 ## Usage 
 
