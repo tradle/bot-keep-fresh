@@ -5,7 +5,7 @@ make sure your users are up to date with your latest models
 
 ## Usage 
 
-Let's say we want to send a ModelPack message to our users whenever our models change. This is how you might do it:
+Let's say we want to send a ModelPack message to our users whenever our models change and a StylesPack when our styles change. This is how you might do it:
 
 ```js
 const keepFresh = require('@tradle/bot-keep-fresh')
@@ -15,7 +15,7 @@ const myModels = require('./mymodels')
 const myStyles = require('./mystyles')
 
 const modelsFreshener = bot.use(keepModelsFresh(myModels))
-const stylesFreshener = bot.use(keepModelsFresh(myStyles))
+const stylesFreshener = bot.use(keepStylesFresh(myStyles))
 
 // to perform hot updates:
 // modelsFreshener.update(newModels)
@@ -35,7 +35,7 @@ function keepModelsFresh (models) {
           models: item
         }
       })
-    })
+    }
   })
 }
 
@@ -54,7 +54,7 @@ function keepStylesFresh (styles) {
           styles: item
         }
       })
-    })
+    }
   })
 }
 ```

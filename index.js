@@ -60,7 +60,7 @@ module.exports = function keepFresh (opts) {
     const storedHash = bin[id]
     if (storedHash !== hash) {
       debug(`updating user "${user.id}" with fresh "${id}"`)
-      yield update({ bot, user })
+      yield update({ bot, user, item })
       bin[id] = hash
       bot.users.save(user)
     }
