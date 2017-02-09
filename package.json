@@ -1,14 +1,18 @@
 {
-  "name": "@tradle/bot-require-models",
+  "name": "@tradle/bot-keep-fresh",
   "version": "1.0.1",
-  "description": "make sure your users are up to date with your latest models",
+  "description": "make sure your users are up to date with your latest assets (models, styles, whatever)",
   "main": "index.js",
-  "repository": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tradle/bot-keep-fresh"
+  },
   "author": "mvayngrib",
   "license": "MIT",
   "dependencies": {
     "bluebird": "^3.4.7",
-    "json-stable-stringify": "^1.0.1"
+    "json-stable-stringify": "^1.0.1",
+    "typeforce": "^1.10.6"
   },
   "devDependencies": {
     "tape": "^4.6.3"

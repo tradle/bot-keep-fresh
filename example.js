@@ -1,19 +1,11 @@
-
-# @tradle/bot-keep-fresh
-
-make sure your users are up to date with your latest models
-
-## Usage 
-
-Let's say we want to send a ModelPack message to our users whenever our models change. This is how you might do it:
-
-```js
 const keepFresh = require('@tradle/bot-keep-fresh')
-// if we change ./mymodels
-// we want to make sure the user gets sent a ModelsPack in the next interaction
-const myModels = require('./mymodels')
 
-function keepModelsFresh (models) {
+/**
+ * If models change, we want to apprise our users with a ModelsPack
+ * @param  {Array}      models
+ * @return {Function}   strategy installation function
+ */
+module.exports = function keepModelsFresh (models) {
   return keepFresh({
     id: 'models',
     item: models,
@@ -31,6 +23,3 @@ function keepModelsFresh (models) {
     })
   })
 }
-
-bot.use(keepModelsFresh(myModels))
-```
