@@ -5,6 +5,7 @@ const co = Promise.coroutine
 const debug = require('debug')('tradle:bot-keep-fresh')
 const stringify = require('json-stable-stringify')
 const STORAGE_KEY = require('./package').name
+const isPromise = obj => obj && typeof obj.then === 'function'
 
 /**
  * Make sure your users are up to date with your keepFresh assets (models, styles, whatever)
@@ -62,7 +63,8 @@ module.exports = function keepFresh (opts) {
       debug(`updating user "${user.id}" with fresh "${id}"`)
       yield update({ bot, user, item })
       bin[id] = hash
-      bot.users.save(user)
+      const maybePromise = bot.users.save(user)
+      if (isPromise(maybePromise)) yield maybePromise
     }
   })
 
