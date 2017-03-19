@@ -38,7 +38,7 @@ test('basic', co(function* (t) {
     }
   }
 
-  let stop = keepFresh({ id, item, update })(bot)
+  let api = keepFresh({ id, item, update })(bot)
 
   yield bot.receive()
   t.equal(timesUpdated, 1)
@@ -49,17 +49,17 @@ test('basic', co(function* (t) {
   t.equal(timesSaved, 1)
 
   // restart
-  stop()
+  api.uninstall()
   item.push({ id: 'c' })
-  stop = keepFresh({ id, item, update })(bot)
+  api = keepFresh({ id, item, update })(bot)
   yield bot.receive()
   t.equal(timesUpdated, 2)
   t.equal(timesSaved, 2)
 
   // proactive
-  stop()
+  api.uninstall()
   item.push({ id: 'd' })
-  stop = keepFresh({
+  api = keepFresh({
     id,
     item,
     update,
@@ -73,15 +73,15 @@ test('basic', co(function* (t) {
   t.equal(timesSaved, 3)
 
   // proactive
-  stop()
-  stop = keepFresh({
+  api.uninstall()
+  api = keepFresh({
     id,
     item,
     update,
     proactive: true
   })(bot)
 
-  yield stop.update('as string?')
+  yield api.update('as string?')
   t.equal(timesUpdated, 4)
   t.equal(timesSaved, 4)
 
