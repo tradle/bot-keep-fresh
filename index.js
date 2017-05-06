@@ -87,7 +87,7 @@ module.exports = function keepFresh (opts) {
   return function install (botHandle) {
     bot = botHandle
     updateItem(item)
-    const removeReceiveHandler = bot.hook.receive(updateIfFresh)
+    const removeReceiveHandler = bot.hook('receive', updateIfFresh)
     // const removePreSendHandler = bot.addPreSendHandler(co(function* ({ user, object }) {
     //   if (object[])
     // }))

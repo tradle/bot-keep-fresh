@@ -32,8 +32,8 @@ test('basic', co(function* (t) {
       }
     }),
     users,
-    hook: {
-      receive: function (handler) {
+    hook: function (method, handler) {
+      if (method === 'receive') {
         handlers.push(handler)
         return () => handlers.filter(h => h !== handler)
       }
