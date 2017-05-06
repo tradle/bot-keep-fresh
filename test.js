@@ -32,9 +32,11 @@ test('basic', co(function* (t) {
       }
     }),
     users,
-    addReceiveHandler: function (handler) {
-      handlers.push(handler)
-      return () => handlers.filter(h => h !== handler)
+    hook: {
+      receive: function (handler) {
+        handlers.push(handler)
+        return () => handlers.filter(h => h !== handler)
+      }
     }
   }
 
