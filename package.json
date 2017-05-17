@@ -1,6 +1,6 @@
 {
   "name": "@tradle/bot-keep-fresh",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "make sure your users are up to date with your latest assets (models, styles, whatever)",
   "main": "index.js",
   "repository": {
