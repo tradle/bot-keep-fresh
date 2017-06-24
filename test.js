@@ -1,6 +1,4 @@
-
-const Promise = require('bluebird')
-const co = Promise.coroutine
+const co = require('co').wrap
 const test = require('tape')
 const keepFresh = require('./')
 
@@ -18,25 +16,30 @@ test('basic', co(function* (t) {
   const users = {
     get: id => id === user.id ? user : null,
     list: () => {
-      return { [user.id]: user }
+      return Promise.resolve({ [user.id]: user })
     },
-    save: () => timesSaved++
+    merge: data => {
+      timesSaved++
+      for (let prop in data) {
+        user[prop] = data[prop]
+      }
+
+      return Promise.resolve()
+    }
   }
 
   const handlers = []
   const bot = {
     receive: co(function* () {
       // doesn't matter what we're receiving
-      for (let i = 0; i < handlers.length; i++) {
-        yield handlers[i]({ user })
+      for (let handler of handlers) {
+        yield handler({ user })
       }
     }),
     users,
-    hook: function (method, handler) {
-      if (method === 'receive') {
-        handlers.push(handler)
-        return () => handlers.filter(h => h !== handler)
-      }
+    onmessage: function (handler) {
+      handlers.push(handler)
+      return () => handlers.filter(h => h !== handler)
     }
   }
 
@@ -68,8 +71,7 @@ test('basic', co(function* (t) {
     proactive: true
   })(bot)
 
-  // hack to check if strategy was proactive
-  yield new Promise(resolve => setTimeout(resolve, 50))
+  yield api.ready
 
   t.equal(timesUpdated, 3)
   t.equal(timesSaved, 3)

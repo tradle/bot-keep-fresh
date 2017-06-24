@@ -1,10 +1,10 @@
 const crypto = require('crypto')
 const typeforce = require('typeforce')
-const Promise = require('bluebird')
-const co = Promise.coroutine
-const debug = require('debug')('tradle:bot-keep-fresh')
+const co = require('co').wrap
 const stringify = require('json-stable-stringify')
-const STORAGE_KEY = require('./package').name
+const thisPackageName = require('./package').name
+const debug = require('debug')(thisPackageName)
+const STORAGE_KEY = thisPackageName
 const isPromise = obj => obj && typeof obj.then === 'function'
 
 /**
@@ -39,20 +39,33 @@ module.exports = function keepFresh (opts) {
     proactive: '?Boolean'
   }, opts)
 
-  let bot
+  return bot => install(bot, opts)
+}
+
+function install (bot, opts) {
   let hash
   let { id, item, update, proactive } = opts
+  let initialized
+  const promiseInit = new Promise(resolve => {
+    initialized = resolve
+  })
 
   /**
    * Allow hot updates
    */
-  const updateItem = co(function* updateItem (latest) {
+  const updateItem = co(function* (latest, force) {
+    if (!force) yield promiseInit
     item = latest
     hash = hashItem(latest)
-    if (proactive) return ensureFresh()
+    if (proactive) yield ensureFresh()
   })
 
-  const updateIfFresh = co(function* updateIfFresh ({ user }) {
+  /**
+   * Propagate the fresh item to the user
+   * @param {Object} options.user
+   * @yield {[type]} [description]
+   */
+  const updateIfFresh = co(function* ({ user }) {
     if (!user[STORAGE_KEY]) {
       user[STORAGE_KEY] = {}
     }
@@ -63,44 +76,37 @@ module.exports = function keepFresh (opts) {
       debug(`updating user "${user.id}" with fresh "${id}"`)
       yield update({ bot, user, item })
       bin[id] = hash
-      const maybePromise = bot.users.save(user)
-      if (isPromise(maybePromise)) yield maybePromise
+      yield bot.users.merge({
+        id: user.id,
+        [STORAGE_KEY]: bin
+      })
     }
   })
 
-  function getAllUsersArray () {
-    return Object.keys(bot.users.list())
-      .map(id => bot.users.get(id))
-  }
-
-  const ensureFresh = co(function* ensureFresh (users) {
+  const ensureFresh = co(function* (users) {
+    debug('updating users')
     // normalize to array
     if (users) {
       users = [].concat(users)
     } else {
-      users = getAllUsersArray()
+      users = yield bot.users.list()
     }
 
-    return Promise.all(users.map(user => updateIfFresh({ user })))
+    return yield map(users, user => updateIfFresh({ user }))
   })
 
-  return function install (botHandle) {
-    bot = botHandle
-    updateItem(item)
-    const removeReceiveHandler = bot.hook('receive', updateIfFresh)
-    // const removePreSendHandler = bot.addPreSendHandler(co(function* ({ user, object }) {
-    //   if (object[])
-    // }))
+  const uninstall = function uninstall () {
+    removeReceiveHandler()
+  }
 
-    return {
-      uninstall,
-      update: updateItem,
-      ensureFresh
-    }
+  updateItem(item, true).then(initialized)
 
-    function uninstall () {
-      removeReceiveHandler()
-    }
+  const removeReceiveHandler = bot.onmessage(updateIfFresh)
+  return {
+    ready: promiseInit,
+    uninstall,
+    update: updateItem,
+    ensureFresh
   }
 }
 
@@ -113,4 +119,13 @@ function sha256 (str) {
     .createHash('sha256')
     .update(str)
     .digest('hex')
+}
+
+function map (objOrArr, mapper) {
+  if (Array.isArray(objOrArr)) {
+    return objOrArr.map(mapper)
+  }
+
+  return Object.keys(objOrArr)
+    .map((key, i) => mapper(objOrArr[key], i))
 }
