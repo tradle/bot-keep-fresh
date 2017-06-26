@@ -4,7 +4,7 @@ const co = require('co').wrap
 const stringify = require('json-stable-stringify')
 const thisPackageName = require('./package').name
 const debug = require('debug')(thisPackageName)
-const STORAGE_KEY = thisPackageName
+const DEFAULT_STORAGE_KEY = thisPackageName.replace(/[^a-zA-Z]/g, '')
 const isPromise = obj => obj && typeof obj.then === 'function'
 
 /**
@@ -31,7 +31,7 @@ const isPromise = obj => obj && typeof obj.then === 'function'
  *   })
  * })
  */
-module.exports = function keepFresh (opts) {
+exports = module.exports = function keepFresh (opts) {
   typeforce({
     id: 'String',
     item: typeforce.oneOf('Object', 'Array'),
@@ -42,9 +42,11 @@ module.exports = function keepFresh (opts) {
   return bot => install(bot, opts)
 }
 
+exports.storageKey = DEFAULT_STORAGE_KEY
+
 function install (bot, opts) {
   let hash
-  let { id, item, update, proactive } = opts
+  let { id, item, update, proactive, storageKey=exports.storageKey } = opts
   let initialized
   const promiseInit = new Promise(resolve => {
     initialized = resolve
@@ -66,11 +68,11 @@ function install (bot, opts) {
    * @yield {[type]} [description]
    */
   const updateIfFresh = co(function* ({ user }) {
-    if (!user[STORAGE_KEY]) {
-      user[STORAGE_KEY] = {}
+    if (!user[storageKey]) {
+      user[storageKey] = {}
     }
 
-    const bin = user[STORAGE_KEY]
+    const bin = user[storageKey]
     const storedHash = bin[id]
     if (storedHash !== hash) {
       debug(`updating user "${user.id}" with fresh "${id}"`)
@@ -78,7 +80,7 @@ function install (bot, opts) {
       bin[id] = hash
       yield bot.users.merge({
         id: user.id,
-        [STORAGE_KEY]: bin
+        [storageKey]: bin
       })
     }
   })
